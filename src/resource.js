@@ -21,7 +21,9 @@ var res = {
     grunt_wav : "res/grunt.wav",
     sonidobucle_wav : "res/sonidobucle.wav",
     animacion_bola_png : "res/animacion_bola.png",
-    animacion_bola_plist : "res/animacion_bola.plist"
+    animacion_bola_plist : "res/animacion_bola.plist",
+    space_jpg : "res/space.jpg",
+    spaceship_png : "res/spaceship.png"
 };
 
 var g_resources = [];

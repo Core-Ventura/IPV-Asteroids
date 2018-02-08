@@ -12,23 +12,32 @@ var GameLayer = cc.Layer.extend({
         cc.spriteFrameCache.addSpriteFrames(res.barra_3_plist);
         cc.spriteFrameCache.addSpriteFrames(res.animacioncocodrilo_plist);
 
+        // Espacio
         this.space = new cp.Space();
-        this.space.gravity = cp.v(0,-350);
 
+        // Depuración
         this.depuracion = new cc.PhysicsDebugNode(this.space);
         this.addChild(this.depuracion, 10);
 
-        // Pelota
-            this.spritePelota = new cc.PhysicsSprite("#animacion_bola1.png");
+        // Fondo
+        this.spriteFondo = cc.Sprite.create(res.space_jpg);
+        this.spriteFondo.setPosition(cc.p(size.width/2, size.height/2));
+        this.spriteFondo.setScale(size.width / this.spriteFondo.width);
+        this.addChild(this.spriteFondo);
+
+        // Nave espacial
+        this.spritePelota = new cc.PhysicsSprite(res.spaceship_png);
+        var spriteScale = 0.2;
+        this.spritePelota.setScale(spriteScale,spriteScale); 
 
             // Body - Cuerpo
             var body = new cp.Body( 1, cp.momentForCircle(1, 0, this.spritePelota.width/2, cp.vzero)    );
             body.p = cc.p(size.width*0.1 ,size.height*0.5);
             this.spritePelota.setBody(body);
             this.space.addBody(body);
-
+        
             // Shape - forma
-            var shape = new cp.CircleShape(body, this.spritePelota.width/2, cp.vzero);
+            var shape = new cp.CircleShape(body, this.spritePelota.width*0.15, cp.vzero);
             this.space.addShape(shape);
             this.addChild(this.spritePelota);
 
@@ -77,9 +86,19 @@ var GameLayer = cc.Layer.extend({
         var instancia = event.getCurrentTarget();
 
         // PRUEBA 2:
-         var body = instancia.spritePelota.body;
-         body.applyImpulse(cp.v( event.getLocationX() - body.p.x, event.getLocationY() - body.p.y), cp.v(0,0));
+        var body = instancia.spritePelota.body;
+        body.applyImpulse(cp.v( event.getLocationX() - body.p.x, event.getLocationY() - body.p.y), cp.v(0,0));
 
+        // Girar nave hacia la posición del click del ratón
+        // Referencia utilizada:
+        // http://www.gamefromscratch.com/post/2012/11/18/GameDev-math-recipes-Rotating-to-face-a-point.aspx
+
+        var angle = Math.atan2(event.getLocationY() - instancia.spritePelota.y, event.getLocationX() - instancia.spritePelota.x );
+        angle = angle * (180/Math.PI); // Para pasar de radianes a grados
+        if(angle < 0) {
+            angle = 360 - (-angle);
+        }
+        instancia.spritePelota.rotation =90 - angle;
 
      },update:function (dt) {
         this.space.step(dt);
