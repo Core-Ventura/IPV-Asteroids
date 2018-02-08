@@ -23,7 +23,8 @@ var res = {
     animacion_bola_png : "res/animacion_bola.png",
     animacion_bola_plist : "res/animacion_bola.plist",
     space_jpg : "res/space.jpg",
-    spaceship_png : "res/spaceship.png"
+    spaceship_png : "res/spaceship.png",
+    asteroid_png : "res/asteroid.png"
 };
 
 var g_resources = [];

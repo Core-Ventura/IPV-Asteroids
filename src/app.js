@@ -2,8 +2,10 @@
 var GameLayer = cc.Layer.extend({
     space:null,
     spritePelota:null,
-    arrayBloques:[],
+    arrayAsteroides:[],
     spriteFondo: null,
+    time:null,
+    dificultad:null,
     ctor:function () {
         this._super();
         var size = cc.winSize;
@@ -12,12 +14,14 @@ var GameLayer = cc.Layer.extend({
         cc.spriteFrameCache.addSpriteFrames(res.barra_3_plist);
         cc.spriteFrameCache.addSpriteFrames(res.animacioncocodrilo_plist);
 
+        this.dificultad = 20;
+
         // Espacio
         this.space = new cp.Space();
 
         // Depuración
-        this.depuracion = new cc.PhysicsDebugNode(this.space);
-        this.addChild(this.depuracion, 10);
+        //this.depuracion = new cc.PhysicsDebugNode(this.space);
+        //this.addChild(this.depuracion, 10);
 
         // Fondo
         this.spriteFondo = cc.Sprite.create(res.space_jpg);
@@ -29,48 +33,43 @@ var GameLayer = cc.Layer.extend({
         this.spritePelota = new cc.PhysicsSprite(res.spaceship_png);
         var spriteScale = 0.2;
         this.spritePelota.setScale(spriteScale,spriteScale); 
-
             // Body - Cuerpo
-            var body = new cp.Body( 1, cp.momentForCircle(1, 0, this.spritePelota.width/2, cp.vzero)    );
+            var body = new cp.Body(1, cp.momentForCircle(1, 0, this.spritePelota.width/2, cp.vzero));
             body.p = cc.p(size.width*0.1 ,size.height*0.5);
             this.spritePelota.setBody(body);
             this.space.addBody(body);
-        
             // Shape - forma
             var shape = new cp.CircleShape(body, this.spritePelota.width*0.15, cp.vzero);
             this.space.addShape(shape);
             this.addChild(this.spritePelota);
 
-        // Muro
+        // Muros
+        var muroIzquierda = new cp.SegmentShape(this.space.staticBody,
+            cp.v(0, 0),// Punto de Inicio
+            cp.v(0, size.height),// Punto final
+            10);// Ancho del muro
+        this.space.addStaticShape(muroIzquierda);
 
-         // Muros
-         var muroIzquierda = new cp.SegmentShape(this.space.staticBody,
-             cp.v(0, 0),// Punto de Inicio
-             cp.v(0, size.height),// Punto final
-             10);// Ancho del muro
-         this.space.addStaticShape(muroIzquierda);
+        var muroArriba = new cp.SegmentShape(this.space.staticBody,
+            cp.v(0, size.height),// Punto de Inicio
+            cp.v(size.width, size.height),// Punto final
+            10);// Ancho del muro
+        this.space.addStaticShape(muroArriba);
 
-         var muroArriba = new cp.SegmentShape(this.space.staticBody,
-             cp.v(0, size.height),// Punto de Inicio
-             cp.v(size.width, size.height),// Punto final
-             10);// Ancho del muro
-         this.space.addStaticShape(muroArriba);
+        var muroDerecha = new cp.SegmentShape(this.space.staticBody,
+            cp.v(size.width, 0),// Punto de Inicio
+            cp.v(size.width, size.height),// Punto final
+            10);// Ancho del muro
+        this.space.addStaticShape(muroDerecha);
 
-         var muroDerecha = new cp.SegmentShape(this.space.staticBody,
-             cp.v(size.width, 0),// Punto de Inicio
-             cp.v(size.width, size.height),// Punto final
-             10);// Ancho del muro
-         this.space.addStaticShape(muroDerecha);
-
-         var muroAbajo = new cp.SegmentShape(this.space.staticBody,
-             cp.v(0, 0),// Punto de Inicio
-             cp.v(size.width, 0),// Punto final
-             10);// Ancho del muro
-         this.space.addStaticShape(muroAbajo);
-
+        var muroAbajo = new cp.SegmentShape(this.space.staticBody,
+            cp.v(0, 0),// Punto de Inicio
+            cp.v(size.width, 0),// Punto final
+            10);// Ancho del muro
+        this.space.addStaticShape(muroAbajo);
 
         this.inicializarPlataformas();
-        this.inicializarBloques();
+        this.inicializarAsteroides();
 
         // Evento MOUSE
         cc.eventManager.addListener({
@@ -82,10 +81,9 @@ var GameLayer = cc.Layer.extend({
         return true;
 
     },procesarMouseDown:function(event) {
-        // Ambito procesarMouseDown
+        // Ámbito procesarMouseDown
         var instancia = event.getCurrentTarget();
 
-        // PRUEBA 2:
         var body = instancia.spritePelota.body;
         body.applyImpulse(cp.v( event.getLocationX() - body.p.x, event.getLocationY() - body.p.y), cp.v(0,0));
 
@@ -102,6 +100,19 @@ var GameLayer = cc.Layer.extend({
 
      },update:function (dt) {
         this.space.step(dt);
+        
+        for( i=0; i<4; i++){
+            var randomNumber1 = Math.floor(Math.random()*2*this.dificultad) - (this.dificultad);
+            var randomNumber2 = Math.floor(Math.random()*2*this.dificultad) - (this.dificultad);
+            var abody = this.arrayAsteroides[i].body.applyImpulse(cp.v( randomNumber1, randomNumber2), cp.v(0,0));
+            // Girar asteroides aleatoriamente
+            this.arrayAsteroides[i].rotation += Math.random()*2;
+        }
+
+        if (this.dificultad <= 100){
+            this.dificultad += 0.001;
+        }
+        console.log(this.dificultad);
 
      },inicializarPlataformas: function(){
         // Sprite
@@ -114,33 +125,29 @@ var GameLayer = cc.Layer.extend({
         spritePlataforma.setBody(body);
 
         // Shape - static
-        var shape
-            = new cp.BoxShape(body, spritePlataforma.width, spritePlataforma.height);
+        var shape = new cp.BoxShape(body, spritePlataforma.width, spritePlataforma.height);
         this.space.addStaticShape(shape);
 
-     }, inicializarBloques:function () {
+     }, inicializarAsteroides:function () {
 
          for( i=0; i < 4; i++){
-            var spriteBloque = new cc.PhysicsSprite("#cocodrilo1.png");
-            this.addChild(spriteBloque);
+            var spriteAsteroide = new cc.PhysicsSprite(res.asteroid_png);
+            var scaleFactor = Math.random();
+            spriteAsteroide.setScale(scaleFactor, scaleFactor);
+            this.addChild(spriteAsteroide);
 
             // BODY dinamico
-            var body =
-                new cp.Body(1, cp.momentForBox(1, spriteBloque.width, spriteBloque.height));
+            var body = new cp.Body(1, cp.momentForCircle(1, 0, spriteAsteroide.width/2, cp.vzero));
             body.p = cc.p(cc.winSize.width*0.7 , cc.winSize.height*0.4 + 10 + 20 + 40 * i);
-            spriteBloque.setBody(body);
+            spriteAsteroide.setBody(body);
             this.space.addBody(body);
 
-
             // SHAPE estatica
-            var shape = new cp.BoxShape(body, spriteBloque.width, spriteBloque.height);
+            var shape = new cp.CircleShape(body, spriteAsteroide.width*(scaleFactor/3), cp.vzero);
             this.space.addShape(shape);
-
-            this.arrayBloques.push(spriteBloque);
+            this.arrayAsteroides.push(spriteAsteroide);
         }
      }
-
-
 });
 
 var GameScene = cc.Scene.extend({
