@@ -1,27 +1,25 @@
+var tipoNave = 2;
+var tipoMuerte = 3;
 
 var GameLayer = cc.Layer.extend({
     space:null,
     spritePelota:null,
     arrayAsteroides:[],
     spriteFondo: null,
-    time:null,
     dificultad:null,
     ctor:function () {
         this._super();
         var size = cc.winSize;
 
-        cc.spriteFrameCache.addSpriteFrames(res.animacion_bola_plist);
-        cc.spriteFrameCache.addSpriteFrames(res.barra_3_plist);
-        cc.spriteFrameCache.addSpriteFrames(res.animacioncocodrilo_plist);
-
+        // Dificultad inicial (velocidad de los asteroides)
         this.dificultad = 20;
 
         // Espacio
         this.space = new cp.Space();
 
         // Depuración
-        //this.depuracion = new cc.PhysicsDebugNode(this.space);
-        //this.addChild(this.depuracion, 10);
+        this.depuracion = new cc.PhysicsDebugNode(this.space);
+        this.addChild(this.depuracion, 10);
 
         // Fondo
         this.spriteFondo = cc.Sprite.create(res.space_jpg);
@@ -42,6 +40,8 @@ var GameLayer = cc.Layer.extend({
             var shape = new cp.CircleShape(body, this.spritePelota.width*0.15, cp.vzero);
             this.space.addShape(shape);
             this.addChild(this.spritePelota);
+            // Colisiones de la nave
+            shape.setCollisionType(tipoNave);
 
         // Muros
         var muroIzquierda = new cp.SegmentShape(this.space.staticBody,
@@ -68,7 +68,12 @@ var GameLayer = cc.Layer.extend({
             10);// Ancho del muro
         this.space.addStaticShape(muroAbajo);
 
-        this.inicializarPlataformas();
+        // Colisiones de los muros
+        muroIzquierda.setCollisionType(tipoMuerte);
+        muroDerecha.setCollisionType(tipoMuerte);
+        muroArriba.setCollisionType(tipoMuerte);
+        muroAbajo.setCollisionType(tipoMuerte);
+
         this.inicializarAsteroides();
 
         // Evento MOUSE
@@ -76,6 +81,9 @@ var GameLayer = cc.Layer.extend({
             event: cc.EventListener.MOUSE,
             onMouseDown: this.procesarMouseDown
         }, this);
+
+        // Escuchar colisiones
+        this.space.addCollisionHandler(tipoNave, tipoMuerte, null, null, this.collisionNaveConMuerte.bind(this), null);
 
         this.scheduleUpdate();
         return true;
@@ -90,7 +98,6 @@ var GameLayer = cc.Layer.extend({
         // Girar nave hacia la posición del click del ratón
         // Referencia utilizada:
         // http://www.gamefromscratch.com/post/2012/11/18/GameDev-math-recipes-Rotating-to-face-a-point.aspx
-
         var angle = Math.atan2(event.getLocationY() - instancia.spritePelota.y, event.getLocationX() - instancia.spritePelota.x );
         angle = angle * (180/Math.PI); // Para pasar de radianes a grados
         if(angle < 0) {
@@ -98,9 +105,8 @@ var GameLayer = cc.Layer.extend({
         }
         instancia.spritePelota.rotation =90 - angle;
 
-     },update:function (dt) {
+    },update:function (dt) {
         this.space.step(dt);
-        
         for( i=0; i<4; i++){
             var randomNumber1 = Math.floor(Math.random()*2*this.dificultad) - (this.dificultad);
             var randomNumber2 = Math.floor(Math.random()*2*this.dificultad) - (this.dificultad);
@@ -108,46 +114,38 @@ var GameLayer = cc.Layer.extend({
             // Girar asteroides aleatoriamente
             this.arrayAsteroides[i].rotation += Math.random()*2;
         }
-
         if (this.dificultad <= 100){
             this.dificultad += 0.001;
         }
         console.log(this.dificultad);
+    }, inicializarAsteroides:function () {
 
-     },inicializarPlataformas: function(){
-        // Sprite
-        var spritePlataforma = new cc.PhysicsSprite("#barra_3.png");
-        this.addChild(spritePlataforma);
-
-        // Body static
-        var body = new cp.StaticBody();
-        body.p = cc.p(cc.winSize.width*0.7 , cc.winSize.height*0.4);
-        spritePlataforma.setBody(body);
-
-        // Shape - static
-        var shape = new cp.BoxShape(body, spritePlataforma.width, spritePlataforma.height);
-        this.space.addStaticShape(shape);
-
-     }, inicializarAsteroides:function () {
-
-         for( i=0; i < 4; i++){
+        for( i=0; i < 4; i++){
             var spriteAsteroide = new cc.PhysicsSprite(res.asteroid_png);
             var scaleFactor = Math.random();
             spriteAsteroide.setScale(scaleFactor, scaleFactor);
             this.addChild(spriteAsteroide);
 
-            // BODY dinamico
+            // Body dinámico
             var body = new cp.Body(1, cp.momentForCircle(1, 0, spriteAsteroide.width/2, cp.vzero));
-            body.p = cc.p(cc.winSize.width*0.7 , cc.winSize.height*0.4 + 10 + 20 + 40 * i);
+            //body.p = cc.p(cc.winSize.width*0.7 , cc.winSize.height*0.4 + 10 + 20 + 40 * i);
+            body.p = cc.p(cc.winSize.width*0.7 , cc.winSize.height*0.4 + 50 * i);
             spriteAsteroide.setBody(body);
             this.space.addBody(body);
 
-            // SHAPE estatica
-            var shape = new cp.CircleShape(body, spriteAsteroide.width*(scaleFactor/3), cp.vzero);
+            // Shape estática
+            var shape = new cp.CircleShape(body, spriteAsteroide.width*(scaleFactor/3.5), cp.vzero);
             this.space.addShape(shape);
+            shape.setCollisionType(tipoMuerte);
+            // Agregamos el Sprite al array
             this.arrayAsteroides.push(spriteAsteroide);
         }
-     }
+    }, collisionNaveConMuerte:function(arbiter, space) {
+        var shapes = arbiter.getShapes();
+        cc.audioEngine.stopMusic();
+        cc.director.pause();
+        this.addChild(new GameOverLayer);
+    }
 });
 
 var GameScene = cc.Scene.extend({

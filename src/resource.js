@@ -24,7 +24,8 @@ var res = {
     animacion_bola_plist : "res/animacion_bola.plist",
     space_jpg : "res/space.jpg",
     spaceship_png : "res/spaceship.png",
-    asteroid_png : "res/asteroid.png"
+    asteroid_png : "res/asteroid.png",
+    boton_nueva_partida_png : "res/boton_nueva_partida.png"
 };
 
 var g_resources = [];
