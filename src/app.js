@@ -75,7 +75,7 @@ var GameLayer = cc.Layer.extend({
         muroAbajo.setCollisionType(tipoMuerte);
 
         this.inicializarAsteroides();
-
+        
         // Evento MOUSE
         cc.eventManager.addListener({
             event: cc.EventListener.MOUSE,
@@ -107,17 +107,14 @@ var GameLayer = cc.Layer.extend({
 
     },update:function (dt) {
         this.space.step(dt);
-        for( i=0; i<4; i++){
-            var randomNumber1 = Math.floor(Math.random()*2*this.dificultad) - (this.dificultad);
-            var randomNumber2 = Math.floor(Math.random()*2*this.dificultad) - (this.dificultad);
-            var abody = this.arrayAsteroides[i].body.applyImpulse(cp.v( randomNumber1, randomNumber2), cp.v(0,0));
-            // Girar asteroides aleatoriamente
-            this.arrayAsteroides[i].rotation += Math.random()*2;
-        }
+        this.moverAsteroides();
+
         if (this.dificultad <= 100){
             this.dificultad += 0.001;
         }
+
         console.log(this.dificultad);
+        
     }, inicializarAsteroides:function () {
 
         for( i=0; i < 4; i++){
@@ -140,11 +137,20 @@ var GameLayer = cc.Layer.extend({
             // Agregamos el Sprite al array
             this.arrayAsteroides.push(spriteAsteroide);
         }
+
     }, collisionNaveConMuerte:function(arbiter, space) {
         var shapes = arbiter.getShapes();
         cc.audioEngine.stopMusic();
         cc.director.pause();
         this.addChild(new GameOverLayer);
+    }, moverAsteroides:function(){
+        for( i=0; i<4; i++){
+            var randomNumber1 = Math.floor(Math.random()*2*this.dificultad) - (this.dificultad);
+            var randomNumber2 = Math.floor(Math.random()*2*this.dificultad) - (this.dificultad);
+            this.arrayAsteroides[i].body.applyImpulse(cp.v( randomNumber1, randomNumber2), cp.v(0,0));
+            // Girar asteroides aleatoriamente
+            this.arrayAsteroides[i].rotation += Math.random()*2;
+        }
     }
 });
 
